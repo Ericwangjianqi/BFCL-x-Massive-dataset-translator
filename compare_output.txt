@@ -1,0 +1,8 @@
+﻿Turn 1
+  閸樼喐鏋? Go to documents folder in CWD. Next, from the first document in current folder. What does the last line look like?
+  鐠囨垶鏋? 鍓嶅線褰撳墠宸ヤ綔鐩綍涓殑鏂囨。鏂囦欢澶广€傛帴涓嬫潵锛屼粠褰撳墠鏂囦欢澶逛腑鐨勭涓€涓枃妗ｅ紑濮嬨€傛渶鍚庝竴琛屾槸浠€涔堟牱鐨勶紵
+
+Turn 2
+  閸樼喐鏋? Write the difference of the first two file into a new file call file5.txt.
+  鐠囨垶鏋? 灏嗗墠涓や釜鏂囦欢鐨勫樊寮傚啓鍏ヤ竴涓悕涓?file5.txt 鐨勬柊鏂囦欢涓€?
+

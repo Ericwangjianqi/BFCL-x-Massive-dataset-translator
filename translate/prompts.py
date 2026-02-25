@@ -14,6 +14,8 @@ specified by the user.
 Translation quality rules:
 - Produce fluent, natural translations that sound like they were originally written \
 by a native speaker — never stiff or word-for-word.
+- All texts are task instructions addressed to an AI assistant — translate them as \
+imperative commands, not as descriptions or third-person statements.
 - Preserve the original meaning, intent, and tone (e.g. if the source is a command, \
 the translation should also read as a command; if it is a question, keep it a question).
 - Use grammatically correct, idiomatic expressions in the target language.

@@ -12,6 +12,7 @@ translator/
 ├── result/             ← Translated files are written here
 ├── translate/
 │   ├── client.py       ← OpenAI API wrapper (retry logic included)
+│   ├── judge.py        ← Gemini-based quality judge
 │   └── prompts.py      ← System prompt + user prompt templates
 ├── config.py           ← Model, fields to translate, batch size
 ├── main.py             ← Entry point
@@ -39,8 +40,9 @@ copy .env.example .env
 ```
 
 Edit `.env`:
-```
+```bash
 OPENAI_API_KEY=sk-...
+GEMINI_API_KEY=AIzaSy...  # (Optional) Required only if using the Judge
 ```
 
 ### 3. Configure fields to translate
@@ -54,6 +56,24 @@ TRANSLATE_FIELDS = [
     "metadata.summary",   # nested field
 ]
 ```
+
+### 4. Configure the Judge (Optional)
+
+You can enable a **Gemini-based Judge** to review and improve translations automatically. The judge checks for:
+1. Grammar correctness
+2. Naturalness (avoiding stiff/literal translations)
+3. Proper noun preservation (file names, paths, code variables, etc.)
+
+To enable it:
+1. Add your Gemini API key to `.env`:
+   ```bash
+   GEMINI_API_KEY=AIzaSy...
+   ```
+2. In `config.py`, set:
+   ```python
+   USE_JUDGE = True
+   JUDGE_MODEL = "gemini-2.0-flash"  # or "gemini-1.5-pro", etc.
+   ```
 
 ---
 

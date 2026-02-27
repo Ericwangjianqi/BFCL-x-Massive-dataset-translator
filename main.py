@@ -20,7 +20,17 @@ from typing import Any
 from tqdm import tqdm
 
 import config
-from translate.client import translate_batch
+from translate.client import translate_batch, translate_with_feedback
+from translate.judge import judge_batch
+
+try:
+    from google.genai.errors import ClientError as _GeminiClientError
+
+    def _is_quota_error(exc: BaseException) -> bool:
+        return isinstance(exc, _GeminiClientError) and exc.code == 429
+except ImportError:
+    def _is_quota_error(exc: BaseException) -> bool:  # type: ignore[misc]
+        return False
 
 
 # ── Path parsing & wildcard traversal ─────────────────────────────────────────
@@ -91,6 +101,70 @@ def _collect_all_string_paths(obj: dict, prefix: str = "") -> list[str]:
 
 # ── Core translation logic ─────────────────────────────────────────────────────
 
+_judge_quota_exhausted = False   # set to True once Gemini quota is hit; skips all future batches
+
+
+def _run_judge_on_batch(
+    originals: list[str],
+    translations: list[str],
+    target_language: str,
+    model: str,
+    temperature: float,
+    judge_model: str,
+    max_retries: int,
+) -> list[str]:
+    """
+    Run Gemini judge on a batch. For any translation that fails, retry GPT
+    with the judge's feedback up to max_retries times.
+
+    Returns the final list of translations (same length as originals).
+    """
+    global _judge_quota_exhausted
+    current = list(translations)
+
+    if _judge_quota_exhausted:
+        return current
+
+    for attempt in range(1, max_retries + 1):
+        try:
+            verdicts = judge_batch(
+                originals=originals,
+                translations=current,
+                target_language=target_language,
+                judge_model=judge_model,
+            )
+        except Exception as exc:
+            # Gemini quota exhausted — skip judging for remaining batches
+            if _is_quota_error(exc):
+                print(
+                    f"\n  [WARN] Gemini quota exhausted — judge disabled for remaining batches.\n"
+                    f"         To re-enable: wait for quota reset or upgrade your Google AI plan.\n"
+                    f"         Translations will be kept as-is without review.\n"
+                )
+                _judge_quota_exhausted = True
+                break
+            raise
+
+        failed_indices = [i for i, v in enumerate(verdicts) if not v.get("ok", True)]
+        if not failed_indices:
+            break
+
+        print(f"    Judge flagged {len(failed_indices)} text(s) — retrying (attempt {attempt}/{max_retries})")
+        for i in failed_indices:
+            feedback = verdicts[i].get("feedback", "The translation needs improvement.")
+            print(f"      · [{i}] {feedback}")
+            current[i] = translate_with_feedback(
+                original=originals[i],
+                previous_translation=current[i],
+                feedback=feedback,
+                target_language=target_language,
+                model=model,
+                temperature=temperature,
+            )
+
+    return current
+
+
 def translate_records(
     records: list[dict],
     fields: list[str],
@@ -98,6 +172,9 @@ def translate_records(
     model: str,
     temperature: float,
     batch_size: int,
+    use_judge: bool = False,
+    judge_model: str = "gemini-2.0-flash",
+    max_judge_retries: int = 1,
 ) -> list[dict]:
     """
     Translate the specified fields across all records.
@@ -132,19 +209,31 @@ def translate_records(
     # ── Step 2: deep-copy so originals stay untouched ─────────────────────────
     translated_records = copy.deepcopy(records)
 
-    # ── Step 3: batch API calls ───────────────────────────────────────────────
+    # ── Step 3: batch translate → optionally judge → retry ────────────────────
     texts_only = [t[2] for t in tasks]
     all_translations: list[str] = []
 
     batches = [texts_only[s: s + batch_size] for s in range(0, len(texts_only), batch_size)]
 
-    for batch in tqdm(batches, desc="  Translating batches", unit="batch"):
+    for batch_idx, batch in enumerate(tqdm(batches, desc="  Translating batches", unit="batch")):
         translated = translate_batch(
             texts=batch,
             target_language=target_language,
             model=model,
             temperature=temperature,
         )
+
+        if use_judge:
+            translated = _run_judge_on_batch(
+                originals=batch,
+                translations=translated,
+                target_language=target_language,
+                model=model,
+                temperature=temperature,
+                judge_model=judge_model,
+                max_retries=max_judge_retries,
+            )
+
         all_translations.extend(translated)
 
     # ── Step 4: write translations back ───────────────────────────────────────
@@ -271,10 +360,12 @@ def main() -> None:
         print(f"[WARN] No JSON files found in '{data_dir}'.")
         sys.exit(0)
 
+    judge_info = f"{config.JUDGE_MODEL} (max {config.MAX_JUDGE_RETRIES} retr{'y' if config.MAX_JUDGE_RETRIES == 1 else 'ies'})" if config.USE_JUDGE else "disabled"
     print(f"Target language : {args.lang}")
     print(f"Model           : {args.model}")
     print(f"File format     : {args.file_format}")
     print(f"Batch size      : {args.batch_size}")
+    print(f"Judge           : {judge_info}")
     print(f"Fields          : {fields if fields else '(auto-detect all string fields)'}")
     print(f"Files found     : {len(json_files)}\n")
 
@@ -293,6 +384,9 @@ def main() -> None:
             model=args.model,
             temperature=config.TEMPERATURE,
             batch_size=args.batch_size,
+            use_judge=config.USE_JUDGE,
+            judge_model=config.JUDGE_MODEL,
+            max_judge_retries=config.MAX_JUDGE_RETRIES,
         )
 
         out_path = result_dir / json_file.name

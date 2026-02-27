@@ -16,7 +16,7 @@ from tenacity import (
     wait_exponential,
 )
 
-from translate.prompts import SYSTEM_PROMPT, build_user_prompt
+from translate.prompts import SYSTEM_PROMPT, build_user_prompt, build_retry_prompt
 
 load_dotenv()
 
@@ -32,7 +32,10 @@ def _get_client() -> OpenAI:
                 "OPENAI_API_KEY is not set. "
                 "Copy .env.example to .env and fill in your key."
             )
-        _client = OpenAI(api_key=api_key)
+        _client = OpenAI(
+            api_key=api_key,
+            base_url="https://us.api.openai.com/v1",
+        )
     return _client
 
 
@@ -71,14 +74,29 @@ def translate_batch(
 
     user_message = build_user_prompt(target_language, safe_texts)
 
-    response = _get_client().chat.completions.create(
-        model=model,
-        temperature=temperature,
-        messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user",   "content": user_message},
-        ],
-    )
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user",   "content": user_message},
+    ]
+
+    # Some newer models (e.g. gpt-5) only accept the default temperature (1).
+    # Try with the configured temperature first; if the API rejects it, retry
+    # without the parameter so the model uses its default.
+    from openai import BadRequestError
+    try:
+        response = _get_client().chat.completions.create(
+            model=model,
+            temperature=temperature,
+            messages=messages,
+        )
+    except BadRequestError as e:
+        if "temperature" in str(e):
+            response = _get_client().chat.completions.create(
+                model=model,
+                messages=messages,
+            )
+        else:
+            raise
 
     raw = response.choices[0].message.content.strip()
 
@@ -104,3 +122,62 @@ def translate_batch(
         )
 
     return [str(t) for t in translated]
+
+
+@retry(
+    retry=retry_if_exception_type(Exception),
+    wait=wait_exponential(multiplier=1, min=2, max=30),
+    stop=stop_after_attempt(3),
+    reraise=True,
+)
+def translate_with_feedback(
+    original: str,
+    previous_translation: str,
+    feedback: str,
+    target_language: str,
+    model: str,
+    temperature: float,
+) -> str:
+    """
+    Retranslate a single text using feedback from the judge.
+
+    Args:
+        original:             The source English string.
+        previous_translation: GPT's previous (rejected) translation.
+        feedback:             Gemini's explanation of what went wrong.
+        target_language:      Target language name.
+        model:                OpenAI model identifier.
+        temperature:          Sampling temperature.
+
+    Returns:
+        A single improved translated string.
+    """
+    user_message = build_retry_prompt(
+        original=original,
+        previous_translation=previous_translation,
+        feedback=feedback,
+        target_language=target_language,
+    )
+
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user",   "content": user_message},
+    ]
+
+    from openai import BadRequestError
+    try:
+        response = _get_client().chat.completions.create(
+            model=model,
+            temperature=temperature,
+            messages=messages,
+        )
+    except BadRequestError as e:
+        if "temperature" in str(e):
+            response = _get_client().chat.completions.create(
+                model=model,
+                messages=messages,
+            )
+        else:
+            raise
+
+    return response.choices[0].message.content.strip()

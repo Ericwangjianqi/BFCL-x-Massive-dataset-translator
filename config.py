@@ -34,6 +34,17 @@ TRANSLATE_FIELDS: list[str] = [
 # Lower this if you hit token-limit errors.
 BATCH_SIZE = 10
 
+# ── Judge (Gemini) ─────────────────────────────────────────────────────────────
+# Set USE_JUDGE = True to enable Gemini as a translation quality reviewer.
+# After each GPT translation batch, Gemini checks:
+#   1. Grammar correctness
+#   2. Naturalness (no stiff/literal translations)
+#   3. Proper noun preservation (file names, paths, abbreviations, etc.)
+# If Gemini flags an issue, GPT retranslates with the feedback.
+USE_JUDGE       = True
+JUDGE_MODEL     = "gemini-2.5-pro"
+MAX_JUDGE_RETRIES = 1   # how many fix attempts per failed translation
+
 # ── Paths ──────────────────────────────────────────────────────────────────────
 DATA_DIR   = "data"
 RESULT_DIR = "result"

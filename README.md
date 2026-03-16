@@ -14,6 +14,10 @@ translator/
 │   ├── client.py       ← OpenAI API wrapper (retry logic included)
 │   ├── judge.py        ← Gemini-based quality judge
 │   └── prompts.py      ← System prompt + user prompt templates
+├── gorilla/            ← BFCL generate & evaluate system (post-translation testing)
+│   ├── berkeley-function-call-leaderboard/   ← Core BFCL framework
+│   │   └── bfcl_eval/  ← Evaluation logic and datasets
+│   └── ans/            ← Output answers and test case configs
 ├── config.py           ← Model, fields to translate, batch size
 ├── main.py             ← Entry point
 ├── requirements.txt
@@ -74,6 +78,39 @@ To enable it:
    USE_JUDGE = True
    JUDGE_MODEL = "gemini-2.0-flash"  # or "gemini-1.5-pro", etc.
    ```
+
+---
+
+## Post-Translation Testing (BFCL)
+
+The `gorilla/` directory integrates the [Berkeley Function-Calling Leaderboard (BFCL)](https://gorilla.cs.berkeley.edu/leaderboard.html) framework to validate translated datasets by running real model generation and evaluation tests.
+
+### Setup
+
+Install the BFCL package into your environment (one-time step):
+
+```bash
+conda activate BFCL
+cd gorilla/berkeley-function-call-leaderboard
+pip install -e .
+```
+
+Configure API keys in `gorilla/ans/.env` (refer to `.env.example` in that folder).
+
+### Generate model responses
+
+```bash
+cd gorilla/berkeley-function-call-leaderboard
+bfcl generate --model <model-name> --run-ids
+```
+
+### Evaluate results
+
+```bash
+bfcl evaluate --model <model-name>
+```
+
+Translated JSON files from `result/` are used as the test datasets. Evaluation output is written back under `gorilla/ans/`.
 
 ---
 

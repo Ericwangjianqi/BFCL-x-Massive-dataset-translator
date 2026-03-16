@@ -389,7 +389,11 @@ def main() -> None:
             max_judge_retries=config.MAX_JUDGE_RETRIES,
         )
 
-        out_path = result_dir / json_file.name
+        # Construct output filename with language suffix
+        lang_suffix = args.lang.replace(" ", "_")
+        out_name = f"{json_file.stem}_{lang_suffix}{json_file.suffix}"
+        out_path = result_dir / out_name
+        
         write_records(translated, out_path, is_jsonl, was_single)
 
         print(f"  Saved → {out_path}\n")

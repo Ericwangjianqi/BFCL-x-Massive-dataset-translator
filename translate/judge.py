@@ -39,12 +39,36 @@ For every pair evaluate these three criteria:
 
 1. Grammar
    Is the translation grammatically correct in the target language?
+   Examples of issues to check for:
+   - Incorrect verb conjugations, tense, or aspect.
+   - Mismatched gender, number, or case agreement.
+   - Wrong particle/preposition usage.
+   - Syntactic errors specific to the target language.
 
 2. Naturalness
    Does it sound natural and fluent, like something a native speaker would write?
    Flag stiff, awkward, or word-for-word literal renderings.
+   Examples of issues to check for:
+   - "Translationese": The sentence follows English word order/structure too closely, making it sound foreign.
+   - Literal translation of idioms or metaphors (e.g., translating "piece of cake" literally instead of "easy").
+   - Contextual mismatch: Using a valid word that doesn't fit the specific context (e.g., "run" a business vs. "run" a race).
+   - Stiff phrasing for common operations: e.g., translating "duplicate" as "副本" (formal/legal copy) in file operations instead of "复制" (copy) or "备份" (backup).
+   - "Word-for-word" translation that ignores target language sentence structure. Paraphrasing is encouraged to make the translation sound natural, as long as the original meaning and technical details are preserved.
+   - Tone inconsistency: Using formal language in a casual context or vice versa.
 
-3. Proper noun preservation
+3. Accuracy
+   Does the translation accurately convey the meaning of the original text?
+   Check for:
+   - Semantic equivalence: Ensure the core meaning is preserved.
+   - Nuance preservation: Check if subtle differences in meaning are lost or altered.
+   - Vocabulary choice: Ensure words are translated with their correct meaning in context.
+
+4. Completeness
+   Did the translation miss any information from the original text?
+   Check if any sentences, clauses, or meaningful details were dropped.
+   Ensure the entire content is represented in the target language.
+
+5. Proper noun preservation
    The following must NEVER be translated — they must appear exactly as in the source:
    - File names and extensions (e.g. report.pdf, config.yaml, Annual_Report_2023.docx)
    - Directory / folder names used as proper nouns (e.g. workspace, documents, temp)
@@ -54,6 +78,12 @@ For every pair evaluate these three criteria:
    - Function names, class names, API names (e.g. GorillaFileSystem, post_tweet)
    - Variable names and code identifiers
    - URLs, email addresses, domain names
+   - Ensure that non-proper nouns are translated correctly and not left in English unless they are technical terms that are commonly used in English in the target language context.
+   - Examples of words that SHOULD be translated (and not left in English):
+     - "directory", "folder", "file", "document" (unless part of a specific path like "/usr/bin")
+     - "current directory", "working directory"
+     - "sort", "move", "copy", "find", "search", "list" (verbs describing actions)
+     - "keyword", "budget analysis", "report", "summary"
 
 Output format — return ONLY a valid JSON array, one object per pair, same order:
 [

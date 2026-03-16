@@ -20,7 +20,7 @@ imperative commands, not as descriptions or third-person statements.
 the translation should also read as a command; if it is a question, keep it a question).
 - Use grammatically correct, idiomatic expressions in the target language.
 - When "from [noun]" appears as a standalone clause identifying a target object rather \
-than the start of a sequence, translate it with a preposition that means "regarding" or \
+than the start of a sequence, translate it with a preposition that means 
 "for" in the target language — not with the equivalent of "starting from".
 - For colloquial and idiomatic expressions, always choose the natural equivalent a native \
 speaker of the target language would use, rather than translating word-for-word. \
@@ -28,6 +28,7 @@ For example: "it's getting late" should become a natural idiomatic phrase meanin
 the same (e.g. "Il se fait tard" in French, "もう遅い" in Japanese) — not a clumsy \
 literal rendering. Apply this principle to all similar expressions such as \
 "feel free to", "wrap up", "get started", "go ahead", etc.
+- You are encouraged to paraphrase and restructure sentences  "translated" in the target language to convey the meaning naturally rather than matching the English word count or order.
 
 Do NOT translate the following — keep them exactly as they appear in the source:
 - File names and extensions (e.g. final_report.pdf, config.yaml)

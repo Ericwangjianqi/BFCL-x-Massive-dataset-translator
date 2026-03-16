@@ -14,7 +14,7 @@ Leave TRANSLATE_FIELDS empty ([]) to auto-translate every string leaf.
 """
 
 # ── Model ──────────────────────────────────────────────────────────────────────
-MODEL = "gpt-4o-mini"          # change to "gpt-4o", "gpt-3.5-turbo", etc.
+MODEL = "gpt-5.2"          # change to "gpt-4o", "gpt-3.5-turbo", etc.
 TEMPERATURE = 0.2              # lower = more consistent/literal translations
 
 # ── File format ────────────────────────────────────────────────────────────────
@@ -42,7 +42,7 @@ BATCH_SIZE = 10
 #   3. Proper noun preservation (file names, paths, abbreviations, etc.)
 # If Gemini flags an issue, GPT retranslates with the feedback.
 USE_JUDGE       = True
-JUDGE_MODEL     = "gemini-2.5-pro"
+JUDGE_MODEL     = "gemini-3-pro-preview"
 MAX_JUDGE_RETRIES = 1   # how many fix attempts per failed translation
 
 # ── Paths ──────────────────────────────────────────────────────────────────────

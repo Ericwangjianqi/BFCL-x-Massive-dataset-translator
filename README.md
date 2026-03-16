@@ -121,7 +121,7 @@ python main.py --lang German --model gpt-4o --batch-size 5
 python main.py --lang Chinese
 ```
 
-**Output** (`result/products.json`):
+**Output** (`result/products_Chinese.json`):
 ```json
 [
   { "id": 1, "title": "无线耳机", "description": "音质出色。" },

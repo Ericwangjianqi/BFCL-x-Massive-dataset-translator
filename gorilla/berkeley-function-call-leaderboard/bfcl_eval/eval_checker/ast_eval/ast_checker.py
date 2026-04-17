@@ -9,6 +9,10 @@ from bfcl_eval.eval_checker.ast_eval.type_convertor.java_type_converter import (
 from bfcl_eval.eval_checker.ast_eval.type_convertor.js_type_converter import (
     js_type_converter,
 )
+from bfcl_eval.eval_checker.semantic_judge import (
+    is_semantically_equivalent_str,
+    is_valid_optional_param_value,
+)
 
 #### Constants ####
 PYTHON_TYPE_MAPPING = {
@@ -37,15 +41,18 @@ def ast_checker(
     language: Language,
     test_category: str,
     model_name: str,
+    prompt_context: str | None = None,
 ):
     if "parallel" in test_category:
         return parallel_function_checker_no_order(
-            func_description, model_output, possible_answer, language, model_name
+            func_description, model_output, possible_answer, language, model_name,
+            prompt_context,
         )
 
     elif "multiple" in test_category:
         return multiple_function_checker(
-            func_description, model_output, possible_answer, language, model_name
+            func_description, model_output, possible_answer, language, model_name,
+            prompt_context,
         )
 
     else:
@@ -57,7 +64,8 @@ def ast_checker(
             }
 
         return simple_function_checker(
-            func_description[0], model_output[0], possible_answer[0], language, model_name
+            func_description[0], model_output[0], possible_answer[0], language,
+            model_name, prompt_context,
         )
 
 
@@ -182,23 +190,36 @@ def standardize_string(input_string: str):
     return re.sub(regex_string, "", input_string).lower().replace("'", '"')
 
 
-def string_checker(param: str, model_output: str, possible_answer: list):
+def string_checker(
+    param: str,
+    model_output: str,
+    possible_answer: list,
+    prompt_context: str | None = None,
+):
     standardize_possible_answer = []
     standardize_model_output = standardize_string(model_output)
     for i in range(len(possible_answer)):
         if type(possible_answer[i]) == str:
             standardize_possible_answer.append(standardize_string(possible_answer[i]))
 
-    if standardize_model_output not in standardize_possible_answer:
-        return {
-            "valid": False,
-            "error": [
-                f"Invalid value for parameter {repr(param)}: {repr(model_output)}. Expected one of {possible_answer}. Case insensitive."
-            ],
-            "error_type": "value_error:string",
-        }
+    if standardize_model_output in standardize_possible_answer:
+        return {"valid": True, "error": []}
 
-    return {"valid": True, "error": []}
+    # Fallback: semantic equivalence check via Gemini for translated datasets.
+    # Skip empty-string sentinels ("" marks optional params, not a real value).
+    for answer in possible_answer:
+        if isinstance(answer, str) and answer != "" and is_semantically_equivalent_str(
+            model_output, answer, prompt_context
+        ):
+            return {"valid": True, "error": []}
+
+    return {
+        "valid": False,
+        "error": [
+            f"Invalid value for parameter {repr(param)}: {repr(model_output)}. Expected one of {possible_answer}. Case insensitive."
+        ],
+        "error_type": "value_error:string",
+    }
 
 
 def list_checker(param: str, model_output: list, possible_answer: list):
@@ -336,6 +357,7 @@ def simple_function_checker(
     possible_answer: dict,
     language: Language,
     model_name: str,
+    prompt_context: str | None = None,
 ):
     possible_answer = list(possible_answer.values())[0]
     # Extract function name and parameters details
@@ -481,9 +503,36 @@ def simple_function_checker(
 
             # Special handle for strings
             elif expected_type_converted == str:
+                param_possible_answers = possible_answer[param]
+                non_empty_answers = [a for a in param_possible_answers if a != ""]
+
+                if not non_empty_answers:
+                    # Parameter is purely optional (gt = [""]).  The model chose
+                    # to supply a value; validate it against the prompt context
+                    # when available, otherwise accept it (param is optional).
+                    if prompt_context is not None:
+                        param_desc = full_param_details.get("description", "")
+                        if not is_valid_optional_param_value(
+                            param, value, param_desc, prompt_context
+                        ):
+                            result["valid"] = False
+                            result["error"].append(
+                                f"Invalid value for optional parameter {repr(param)}: "
+                                f"{repr(value)}. The value is not consistent with the "
+                                f"prompt context."
+                            )
+                            result["error_type"] = "value_error:optional_param_invalid"
+                            return result
+                    continue
+
                 # We don't check for case sensitivity for string, as long as it's not a variable
-                result = string_checker(param, value, possible_answer[param])
+                result = string_checker(param, value, non_empty_answers, prompt_context)
                 if not result["valid"]:
+                    # If "" is also a valid answer the parameter is optional;
+                    # a model-supplied value that doesn't match any explicit gt
+                    # is still acceptable.
+                    if "" in param_possible_answers:
+                        continue
                     return result
                 continue
 
@@ -521,6 +570,7 @@ def parallel_function_checker_enforce_order(
     possible_answers: dict,
     language: Language,
     model_name: str,
+    prompt_context: str | None = None,
 ):
     if len(model_output) != len(possible_answers):
         return {
@@ -544,6 +594,7 @@ def parallel_function_checker_enforce_order(
             possible_answers_list[i],
             language,
             model_name,
+            prompt_context,
         )
         if not result["valid"]:
             return result
@@ -557,6 +608,7 @@ def parallel_function_checker_no_order(
     possible_answers: list,
     language: Language,
     model_name: str,
+    prompt_context: str | None = None,
 ):
     if len(model_output) != len(possible_answers):
         return {
@@ -586,6 +638,7 @@ def parallel_function_checker_no_order(
                 possible_answers[i],
                 language,
                 model_name,
+                prompt_context,
             )
 
             if result["valid"]:
@@ -626,6 +679,7 @@ def multiple_function_checker(
     possible_answers: list,
     language: Language,
     model_name: str,
+    prompt_context: str | None = None,
 ):
     if len(model_output) != len(possible_answers):
         return {
@@ -643,4 +697,5 @@ def multiple_function_checker(
         possible_answers[0],
         language,
         model_name,
+        prompt_context,
     )

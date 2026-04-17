@@ -19,6 +19,12 @@ imperative commands, not as descriptions or third-person statements.
 - Preserve the original meaning, intent, and tone (e.g. if the source is a command, \
 the translation should also read as a command; if it is a question, keep it a question).
 - Use grammatically correct, idiomatic expressions in the target language.
+- Balance target-language grammar, English source structure, and naturalness: \
+always prioritise grammatical correctness in the target language first, then \
+maximise naturalness — the result should read as something a native speaker \
+would naturally say or write, not as a mechanical rendering of English syntax. \
+Avoid stiff, overly literal phrasing; restructure sentences freely as long as \
+the original meaning, intent, and technical details are fully preserved.
 - When "from [noun]" appears as a standalone clause identifying a target object rather \
 than the start of a sequence, translate it with a preposition that means 
 "for" in the target language — not with the equivalent of "starting from".
@@ -29,6 +35,30 @@ the same (e.g. "Il se fait tard" in French, "もう遅い" in Japanese) — not 
 literal rendering. Apply this principle to all similar expressions such as \
 "feel free to", "wrap up", "get started", "go ahead", etc.
 - You are encouraged to paraphrase and restructure sentences  "translated" in the target language to convey the meaning naturally rather than matching the English word count or order.
+- Pay careful attention to the following English grammar structures before translating:
+  • Appositives: a noun phrase that immediately follows another noun/name, separated only \
+by a comma, describes or identifies that noun — it is NOT a second item connected by "and". \
+Example: "Julia, our insightful team" → Julia IS the insightful team; translate it as a \
+single entity with a descriptor, not as "Julia and our team".
+  • Non-restrictive vs restrictive relative clauses: a clause introduced by "which" (or \
+"who") and set off by commas adds extra, non-essential information about the preceding noun \
+("the file, which is hidden, …" = the file happens to be hidden). A clause without commas \
+("the file that is hidden") restricts which file is meant. Preserve this distinction in \
+the translation.
+  • Participial phrases: a phrase starting with a present or past participle acts as a \
+modifier, not a main verb. "Sort the lines, starting from the oldest" means start-from-oldest \
+is the manner of sorting — do not treat it as an independent action.
+  • Coordination scope: "and/or" connects the closest parallel elements unless context \
+clearly says otherwise. "Find and delete files in folder A and B" means (find AND delete) \
+in (A AND B) — not four separate actions. Resolve scope before translating.
+  • Ellipsis in parallel structures: a verb shared across coordinated clauses may be \
+omitted after the first occurrence. "Sort the first file and the second" means "sort … \
+and [sort] the second" — supply the correct verb in the translation for each target language \
+if that language requires it.
+  • Fronted adverbial / conditional phrases: when a condition or time clause appears at the \
+start of a sentence ("Once the file is sorted, share it"), the comma separates the \
+subordinate clause from the main clause. Do not merge them into a single action or lose \
+the dependency.
 
 Do NOT translate the following — keep them exactly as they appear in the source:
 - File names and extensions (e.g. final_report.pdf, config.yaml)
@@ -46,6 +76,14 @@ Examples: "workspace folder" → keep "workspace", translate only "folder"; \
 - URLs, email addresses, and domain names
 - Variable names, parameter names, and identifiers in code
 - Any other technical proper nouns that are conventionally kept in English
+- Content enclosed in quotation marks (both " " and ' ') — keep the quoted text exactly \
+as it appears in the source, do not translate it. Only translate the surrounding sentence \
+structure outside the quotes.
+- Search or filter subjects/topics: when the instruction specifies a topic, subject, keyword, \
+or search term as a concrete value (e.g. "find files about X", "search with Y as the topic", \
+"filter by theme Z"), keep the topic/subject value X, Y, or Z untranslated.
+- Person names — do not translate or romanise names of people; keep them exactly as they \
+appear in the source.
 
 Output format rules:
 - Do NOT add explanations, notes, or any extra content.
@@ -71,7 +109,7 @@ def build_user_prompt(target_language: str, texts: list[str]) -> str:
     texts_json = json.dumps(texts, ensure_ascii=False, indent=2)
     return (
         f"Translate the following texts into {target_language}.\n"
-        f"Remember: keep all file names, directory names, paths, technical abbreviations (e.g. CWD, CLI), commands, and technical proper nouns exactly as they appear — do not translate or expand them.\n\n"
+        f"Remember: keep all file names, directory names, paths, technical abbreviations (e.g. CWD, CLI), commands, and technical proper nouns exactly as they appear — do not translate or expand them. Also keep quoted content, search/filter topic values, and person names untranslated.\n\n"
         f"Input JSON array:\n{texts_json}\n\n"
         f"Return only the translated JSON array."
     )

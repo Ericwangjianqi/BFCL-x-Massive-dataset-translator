@@ -45,9 +45,14 @@ For every pair evaluate these three criteria:
    - Wrong particle/preposition usage.
    - Syntactic errors specific to the target language.
 
-2. Naturalness
-   Does it sound natural and fluent, like something a native speaker would write?
-   Flag stiff, awkward, or word-for-word literal renderings.
+2. Naturalness and Grammar Balance
+   Does the translation strike the right balance between target-language grammar, \
+   English source structure, and naturalness?
+   The translation must be grammatically correct in the target language first, and \
+   then be as natural as possible — it should read like something a native speaker \
+   would actually say or write, not a mechanical rendering of English syntax.
+   Flag anything that sounds stiff, unnatural, or overly literal even if it is \
+   technically grammatical.
    Examples of issues to check for:
    - "Translationese": The sentence follows English word order/structure too closely, making it sound foreign.
    - Literal translation of idioms or metaphors (e.g., translating "piece of cake" literally instead of "easy").
@@ -62,6 +67,27 @@ For every pair evaluate these three criteria:
    - Semantic equivalence: Ensure the core meaning is preserved.
    - Nuance preservation: Check if subtle differences in meaning are lost or altered.
    - Vocabulary choice: Ensure words are translated with their correct meaning in context.
+   - Appositives: a noun phrase immediately following another noun/name, set off by a \
+comma, identifies or describes that noun — it is NOT a second item joined by "and". \
+Example: "Julia, our insightful team" means Julia IS the insightful team; translating it \
+as "Julia and our team" is a meaning error and must be flagged.
+   - Non-restrictive vs restrictive relative clauses: "the file, which is hidden," (commas) \
+adds extra info about a specific file; "the file that is hidden" restricts which file. If \
+the translation collapses this distinction or changes the scope of modification, flag it.
+   - Participial phrase scope: a participial phrase modifies the nearest noun or describes \
+the manner of the main action — it is not an independent verb. "Sort the lines, starting \
+from the oldest" should be translated as a single sorting action (manner: from oldest), not \
+as two separate actions.
+   - Coordination scope: "and/or" joins the closest parallel elements. "Find and delete \
+files in A and B" means (find and delete) applied to (A and B). If the translation \
+incorrectly splits or reorders the scope, flag it.
+   - Ellipsis in parallel structures: English often omits a repeated verb. "Sort the first \
+file and the second" means "sort … and [sort] the second". The translation must express \
+the complete meaning; if the omitted verb is not implied correctly in the target language, \
+flag it.
+   - Fronted conditional / adverbial clauses: "Once the file is sorted, share it" has a \
+dependency — the sharing happens after/because of the sorting. If the translation merges \
+these into one simultaneous action or loses the conditionality, flag it.
 
 4. Completeness
    Did the translation miss any information from the original text?
@@ -78,6 +104,15 @@ For every pair evaluate these three criteria:
    - Function names, class names, API names (e.g. GorillaFileSystem, post_tweet)
    - Variable names and code identifiers
    - URLs, email addresses, domain names
+   - Content enclosed in quotation marks (both " " and ' ') — the quoted text must appear
+     exactly as in the source; only the surrounding sentence structure outside the quotes
+     may be translated.
+   - Search or filter subjects/topics: when the instruction specifies a topic, subject,
+     keyword, or search term as a concrete value (e.g. "find files about X", "search with
+     Y as the topic", "filter by theme Z"), the topic/subject value X, Y, or Z must remain
+     untranslated.
+   - Person names — names of people must appear exactly as in the source; do not translate
+     or romanise them.
    - Ensure that non-proper nouns are translated correctly and not left in English unless they are technical terms that are commonly used in English in the target language context.
    - Examples of words that SHOULD be translated (and not left in English):
      - "directory", "folder", "file", "document" (unless part of a specific path like "/usr/bin")

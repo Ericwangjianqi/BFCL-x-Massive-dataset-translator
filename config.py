@@ -42,7 +42,7 @@ BATCH_SIZE = 10
 #   3. Proper noun preservation (file names, paths, abbreviations, etc.)
 # If Gemini flags an issue, GPT retranslates with the feedback.
 USE_JUDGE       = True
-JUDGE_MODEL     = "gemini-3-pro-preview"
+JUDGE_MODEL     = "gemini-3.1-pro-preview"
 MAX_JUDGE_RETRIES = 1   # how many fix attempts per failed translation
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
